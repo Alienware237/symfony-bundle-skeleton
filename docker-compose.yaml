@@ -1,0 +1,78 @@
+version: '3'
+
+networks:
+  app-project:
+    #      name: 50_default
+    driver: bridge
+
+services:
+
+  app-project:
+    build:
+      dockerfile: Dockerfile
+    container_name: app-project
+    networks:
+      - app-project
+    volumes:
+      - '.:/var/www/html'
+      - '/mnt/var:/mnt/var'
+    ports:
+      - "8095:80"
+
+###> doctrine/doctrine-bundle ###
+  app-database:
+    image: mysql:${MYSQL_VERSION:-latest}
+    container_name: app-mysql-dwh
+    restart: always
+    environment:
+      MYSQL_DATABASE: "appApp"
+      MYSQL_USER: "appUser"
+      MYSQL_PASSWORD: "123"
+      MYSQL_ROOT_PASSWORD: "root"
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "--silent" ]
+    ports:
+      - "3311:3306"
+    volumes:
+      - app_dwh:/var/lib/mysql
+    networks:
+      - app-project
+
+  app-test-database:
+    image: mysql:${MYSQL_VERSION:-latest}
+    container_name: app-mysql-test
+    restart: always
+    environment:
+      MYSQL_DATABASE: "app_test"
+      MYSQL_USER: "appUser"
+      MYSQL_PASSWORD: "123"
+      MYSQL_ROOT_PASSWORD: "root"
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "--silent" ]
+    ports:
+      - "3310:3306"
+    volumes:
+      - app_test_dwh:/var/lib/mysql
+    networks:
+      - app-project
+
+  app-phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: app-phpmyadmin
+    environment:
+      MYSQL_ROOT_PASSWORD: Kimpa
+      MYSQL_DATABASE: appApp
+      MYSQL_USER: appUser
+      MYSQL_PASSWORD: 123
+      PMA_HOST: app-database
+    restart: always
+    networks:
+      - app-project
+    ports:
+      - 8082:80
+
+volumes:
+###> doctrine/doctrine-bundle ###
+  app_dwh:
+
+  app_test_dwh:
